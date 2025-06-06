@@ -3,7 +3,7 @@ from bot.config import Config
 from aiogram.types import Message
 
 
-DEFAULT_LANGUAGE = "en"
+DEFAULT_LANGUAGE = "ru"
 DEFAULT_REMINDER_TIME = "12:00"
 DEFAULT_STATE = "start"
 DEFAULT_STATUS = "active"
