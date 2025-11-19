@@ -9,6 +9,7 @@ Handles:
 """
 
 import json
+import os
 import re
 from typing import Optional
 import requests
@@ -268,5 +269,5 @@ Provide a helpful answer:"""
         return self._call_ollama(prompt, system_prompt)
 
 
-# Singleton instance
-ollama_service = OllamaService(model="gemma3")
+# Singleton instance - use MODEL from environment or default to gemma3
+ollama_service = OllamaService(model=os.getenv("MODEL", "gemma3"))

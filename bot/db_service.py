@@ -47,7 +47,7 @@ def update_user(user_id: int, message: Message):
     except AttributeError:
         # need logging
         return None
-    
+
     user = {
         "user_id": user_id,
         "username": username,
@@ -119,9 +119,7 @@ def update_card(card: Card) -> bool:
         bool: True if successful
     """
     try:
-        result = cards_collection.update_one(
-            {"user_id": card.user_id, "name": card.name}, {"$set": card.to_dict()}
-        )
+        result = cards_collection.update_one({"user_id": card.user_id, "name": card.name}, {"$set": card.to_dict()})
         return result.modified_count > 0
     except Exception as e:
         print(f"Error updating card: {e}")
@@ -175,9 +173,9 @@ def get_due_cards(user_id: int, current_time: datetime = None) -> list[Card]:
     if current_time is None:
         current_time = datetime.now()
 
-    docs = cards_collection.find(
-        {"user_id": user_id, "next_review_date": {"$lte": current_time}}
-    ).sort("next_review_date", 1)  # Sort by oldest first
+    docs = cards_collection.find({"user_id": user_id, "next_review_date": {"$lte": current_time}}).sort(
+        "next_review_date", 1
+    )  # Sort by oldest first
 
     return [Card.from_dict(doc) for doc in docs]
 
@@ -194,9 +192,7 @@ def get_cards_count(user_id: int) -> dict:
     """
     now = datetime.now()
     total = cards_collection.count_documents({"user_id": user_id})
-    due_today = cards_collection.count_documents(
-        {"user_id": user_id, "next_review_date": {"$lte": now}}
-    )
+    due_today = cards_collection.count_documents({"user_id": user_id, "next_review_date": {"$lte": now}})
     new = cards_collection.count_documents({"user_id": user_id, "repetitions": 0})
 
     return {"total": total, "due_today": due_today, "new": new}
@@ -241,11 +237,7 @@ def get_review_stats(user_id: int, days: int = 30) -> dict:
     start_date = datetime.now() - timedelta(days=days)
 
     # Get all reviews in time period
-    reviews = list(
-        reviews_collection.find(
-            {"user_id": user_id, "reviewed_at": {"$gte": start_date}}
-        )
-    )
+    reviews = list(reviews_collection.find({"user_id": user_id, "reviewed_at": {"$gte": start_date}}))
 
     if not reviews:
         return {

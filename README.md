@@ -20,7 +20,7 @@ An Anki-style flashcard system for learning algorithms and data structures, buil
 2. **MongoDB** - For storing flashcards
 3. **Ollama** - Local LLM for natural language processing
    - Install: https://ollama.com/download
-   - Pull a model: `ollama pull llama2`
+   - Pull a model: `ollama pull gemma3`
 4. **Telegram Bot Token** - Create bot via [@BotFather](https://t.me/BotFather)
 
 ### Installation
@@ -49,6 +49,7 @@ BOT_TOKEN=your_telegram_bot_token_here
 MONGODB_URI=mongodb://localhost:27017/
 MONGO_INITDB_ROOT_USERNAME=your_username
 MONGO_INITDB_ROOT_PASSWORD=your_password
+MODEL=gemma3  # Ollama model (default: gemma3, alternatives: llama2, mistral, phi, codellama)
 ```
 
 ### Running
@@ -58,10 +59,10 @@ MONGO_INITDB_ROOT_PASSWORD=your_password
 ollama serve
 
 # Pull an LLM model (first time only)
-ollama pull llama2
+ollama pull gemma3
 
 # Run the bot
-python bot/main.py
+python -m bot.main
 ```
 
 ### Docker Setup
@@ -218,17 +219,23 @@ black --check bot/
 
 ### Changing LLM Model
 
-Edit `bot/llm_service.py` line 16:
+Set the `MODEL` environment variable in your `.env` file:
 
-```python
-ollama_service = OllamaService(model="mistral")  # or phi, codellama, etc.
+```env
+MODEL=mistral  # Change to your preferred model
 ```
 
 Recommended models:
+- **gemma3**: Fast and accurate (default)
 - **llama2**: General purpose, good balance
 - **mistral**: Faster, more concise responses
 - **codellama**: Better for understanding code
 - **phi**: Lightweight, faster inference
+
+After changing the model, make sure to pull it:
+```bash
+ollama pull mistral  # Replace with your chosen model
+```
 
 ### SM-2 Parameters
 
@@ -250,7 +257,7 @@ Modify `bot/sm2.py` to adjust review intervals:
 
 - Ensure Ollama is running: `ollama serve`
 - Check model is installed: `ollama list`
-- Try pulling model again: `ollama pull llama2`
+- Try pulling model again: `ollama pull gemma3`
 
 ### No cards showing in /review
 
