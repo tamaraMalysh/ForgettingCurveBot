@@ -24,6 +24,10 @@ class Card:
     repetitions: int = 0  # Number of successful reviews
     next_review_date: datetime = None  # When to review next
 
+    # Adaptive scheduling fields
+    acceptance_rate: Optional[float] = None  # LeetCode acceptance rate (0.0-1.0)
+    difficulty_multiplier: float = 1.0  # Calculated from acceptance_rate + tags
+
     # Metadata
     created_at: datetime = None
     last_reviewed_at: Optional[datetime] = None
@@ -52,6 +56,8 @@ class Card:
             "interval": self.interval,
             "repetitions": self.repetitions,
             "next_review_date": self.next_review_date,
+            "acceptance_rate": self.acceptance_rate,
+            "difficulty_multiplier": self.difficulty_multiplier,
             "created_at": self.created_at,
             "last_reviewed_at": self.last_reviewed_at,
         }
@@ -71,6 +77,8 @@ class Card:
             interval=data.get("interval", 0),
             repetitions=data.get("repetitions", 0),
             next_review_date=data.get("next_review_date", datetime.now()),
+            acceptance_rate=data.get("acceptance_rate"),
+            difficulty_multiplier=data.get("difficulty_multiplier", 1.0),
             created_at=data.get("created_at", datetime.now()),
             last_reviewed_at=data.get("last_reviewed_at"),
         )

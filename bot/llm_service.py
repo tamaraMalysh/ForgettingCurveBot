@@ -7,6 +7,7 @@ Handles:
 - Smart tagging
 - Answering questions during review
 """
+
 import json
 import re
 from typing import Optional
@@ -68,9 +69,10 @@ Extract the following fields from the user's message:
 - notes: Explanation or notes (optional)
 - links: URLs (optional, return as array)
 - tags: Relevant tags like difficulty, data structure, algorithm type (optional, return as array)
+- acceptance_rate: LeetCode/problem acceptance rate as decimal 0.0-1.0 (optional, e.g., "50% acceptance" → 0.5, "0.35 acceptance" → 0.35)
 
 Return ONLY a valid JSON object with these fields. If a field is not found, omit it or set to null.
-Example: {"name": "Two Sum", "code": "def two_sum()...", "notes": "Uses hashmap", "links": ["https://..."], "tags": ["array", "hashmap", "easy"]}
+Example: {"name": "Two Sum", "code": "def two_sum()...", "notes": "Uses hashmap", "links": ["https://..."], "tags": ["array", "hashmap", "easy"], "acceptance_rate": 0.45}
 """
 
         prompt = f"""Parse this flashcard creation message:
@@ -117,6 +119,23 @@ Return ONLY the JSON object, no other text."""
         links = re.findall(url_pattern, text)
         if links:
             result["links"] = links
+
+        # Extract acceptance rate (e.g., "50% acceptance", "0.35 acceptance", "acceptance: 45%")
+        acceptance_patterns = [
+            r"(\d+(?:\.\d+)?)\s*%\s*accept",  # "50% acceptance" or "50% accept"
+            r"accept(?:ance)?[:\s]+(\d+(?:\.\d+)?)\s*%",  # "acceptance: 50%"
+            r"(?:^|\s)0\.(\d+)\s*accept",  # "0.45 acceptance"
+        ]
+        for pattern in acceptance_patterns:
+            match = re.search(pattern, text, re.IGNORECASE)
+            if match:
+                rate_str = match.group(1)
+                rate = float(rate_str)
+                # Convert percentage to decimal if needed
+                if rate > 1.0:
+                    rate = rate / 100.0
+                result["acceptance_rate"] = round(rate, 3)
+                break
 
         # Extract name (first line or before comma)
         lines = text.split("\n")
@@ -177,12 +196,27 @@ Return ONLY the JSON object."""
         """
         system_prompt = """You are an expert at categorizing algorithms and data structures.
 Generate relevant tags for this flashcard. Include:
-- Data structure types (e.g., array, tree, graph, heap)
-- Algorithm types (e.g., bfs, dfs, dynamic programming, greedy)
-- Difficulty (easy, medium, hard)
-- Problem patterns (e.g., sliding window, two pointers)
 
-Return ONLY a JSON array of strings, e.g., ["graph", "bfs", "medium", "shortest path"]
+**Data structure types:**
+- Basic: array, string, hashmap, linked list, stack, queue
+- Common: heap, priority queue, binary search tree
+- Rare: graph, trie, segment tree, fenwick tree, union find
+
+**Algorithm types:**
+- Basic: sorting, binary search, math, bit manipulation
+- Common: two pointers, sliding window, bfs, dfs, dynamic programming, greedy, backtracking
+- Rare: dijkstra, kruskal, topological sort, network flow, suffix array
+
+**Algorithm patterns:**
+- Examples: sliding window, two pointers, monotonic stack, prefix sum
+
+**Difficulty:**
+- easy, medium, hard (based on complexity)
+
+**Be specific with algorithm names** - if it's Dijkstra's algorithm, include "dijkstra" tag.
+If it involves graphs, always include "graph" tag.
+
+Return ONLY a JSON array of strings, e.g., ["graph", "dijkstra", "shortest path", "hard"]
 """
 
         code_info = f"\nCode: {code[:200]}..." if code else ""
@@ -235,4 +269,4 @@ Provide a helpful answer:"""
 
 
 # Singleton instance
-ollama_service = OllamaService()
+ollama_service = OllamaService(model="gemma3")

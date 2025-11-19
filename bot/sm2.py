@@ -3,9 +3,19 @@ SM-2 Spaced Repetition Algorithm (SuperMemo 2)
 
 This is the same algorithm used by Anki.
 Reference: https://www.supermemo.com/en/archives1990-2015/english/ol/sm2
+
+Enhanced with adaptive intervals based on:
+- Problem acceptance rate (difficulty)
+- Algorithm rarity (how often used in practice)
 """
 from datetime import datetime, timedelta
 from bot.models import Card, Review
+from bot.algorithm_config import (
+    ALGORITHM_RARITY,
+    DIFFICULTY_MULTIPLIERS,
+    get_difficulty_from_acceptance_rate,
+    get_rarity_category,
+)
 
 
 class SM2Algorithm:
@@ -16,6 +26,38 @@ class SM2Algorithm:
     HARD = 1  # Remembered with difficulty
     GOOD = 2  # Remembered with some effort
     EASY = 3  # Remembered easily
+
+    @staticmethod
+    def calculate_difficulty_multiplier(card: Card) -> float:
+        """
+        Calculate adaptive interval multiplier based on problem difficulty and algorithm rarity.
+
+        The multiplier adjusts review intervals based on:
+        1. Acceptance rate (lower = harder = more frequent reviews)
+        2. Algorithm rarity (rare algorithms like graphs need more practice)
+
+        Args:
+            card: The flashcard being reviewed
+
+        Returns:
+            float: Multiplier for interval (< 1.0 = more frequent, > 1.0 = less frequent)
+        """
+        multiplier = 1.0
+
+        # 1. Apply acceptance rate multiplier (problem difficulty)
+        if card.acceptance_rate is not None:
+            difficulty = get_difficulty_from_acceptance_rate(card.acceptance_rate)
+            multiplier *= DIFFICULTY_MULTIPLIERS[difficulty]["multiplier"]
+
+        # 2. Apply algorithm rarity multiplier
+        if card.tags:
+            rarity = get_rarity_category(card.tags)
+            multiplier *= ALGORITHM_RARITY[rarity]["interval_multiplier"]
+
+        # Store the calculated multiplier in the card for analytics
+        card.difficulty_multiplier = multiplier
+
+        return multiplier
 
     @staticmethod
     def calculate_next_review(
@@ -72,6 +114,12 @@ class SM2Algorithm:
                 card.interval = round(card.interval * 1.3)
 
             card.repetitions += 1
+
+        # Apply adaptive difficulty multiplier (based on acceptance rate + algorithm rarity)
+        # This happens after rating-based adjustment but before setting the date
+        if card.interval > 0:  # Only apply to non-zero intervals
+            difficulty_mult = SM2Algorithm.calculate_difficulty_multiplier(card)
+            card.interval = max(1, round(card.interval * difficulty_mult))
 
         # Calculate next review date
         card.next_review_date = current_time + timedelta(days=card.interval)

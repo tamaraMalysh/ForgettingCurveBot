@@ -77,6 +77,7 @@ Just type naturally! Examples:
 • "add Two Sum, uses hashmap for O(n)"
 • "Create card for DFS, here's my code: ```python..."
 • "Binary Search algorithm, divide and conquer"
+• "add Kruskal's Algorithm, 50% acceptance" (include acceptance rate for adaptive scheduling)
 
 **Reviewing Cards:**
 1. Use /review to start a review session
@@ -186,6 +187,7 @@ async def handle_card_creation(message: types.Message, text: str):
         notes=parsed.get("notes"),
         links=parsed.get("links", []),
         tags=parsed.get("tags", []),
+        acceptance_rate=parsed.get("acceptance_rate"),
     )
 
     # Save to database
@@ -197,9 +199,20 @@ async def handle_card_creation(message: types.Message, text: str):
 
 📝 **{card.name}**
 🏷️ Tags: {tags_str}
-📅 Next review: {card.next_review_date.strftime('%Y-%m-%d %H:%M')}
+📅 Next review: {card.next_review_date.strftime('%Y-%m-%d %H:%M')}"""
 
-The card is ready for review!"""
+        # Show acceptance rate if provided
+        if card.acceptance_rate is not None:
+            response += f"\n📊 Acceptance rate: {card.acceptance_rate:.1%}"
+
+        # Show difficulty multiplier if different from 1.0
+        if card.difficulty_multiplier != 1.0:
+            if card.difficulty_multiplier < 1.0:
+                response += f"\n⚡ This card will be reviewed more frequently (×{card.difficulty_multiplier:.2f})"
+            else:
+                response += f"\n😊 This card will be reviewed less frequently (×{card.difficulty_multiplier:.2f})"
+
+        response += "\n\nThe card is ready for review!"
 
         if card.notes:
             response += f"\n\n💡 Notes: {card.notes[:100]}..."
